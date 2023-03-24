@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.sparse import diags, identity
+from scipy.sparse import diags, identity, coo_matrix
 import matplotlib.pyplot as plot
 import plotly.express as px
 import plotly.graph_objects as go
@@ -68,6 +68,7 @@ def draw_plot(max_k=10000, eps=1e-10, dim=10):
     K1d = diags([-1, 2, -1], [-1, 0, 1], shape=(dim, dim)).toarray()
     id_n = identity(dim).toarray()
     A = np.kron(id_n, K1d) + np.kron(K1d, id_n)
+    print(A)
     b = np.random.randint(0, 10, dim ** 2)
     x0 = np.zeros(dim ** 2)
 
@@ -100,7 +101,6 @@ def draw_plot(max_k=10000, eps=1e-10, dim=10):
     fig.write_image(str("relEnergyError_N" + str(dim) + ".png"))
 
 
-for n in [10, 100, 10000]:
+for n in [3]:
     draw_plot(dim=n)
-
 
