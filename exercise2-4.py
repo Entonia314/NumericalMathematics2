@@ -38,7 +38,7 @@ def steepest_descent(matrix_a, vector_b, x0, max_k=1000, eps=1e-10):
 
         k += 1
 
-    print("SD done, k=", k)
+    print("SD done, k = ", k)
     return result_x.reshape((k + 1, len(vector_b))), k, e_array, error_bound
 
 
@@ -48,9 +48,6 @@ def conjugate_gradient(matrix_a, vector_b, x0, max_k=10000, eps=1e-10):
     result = np.array([])
     e_array = np.array([])
     error_bound = np.array([])
-
-    row_ind = np.array(range(0, n**2))
-    col_ind = np.zeros(n**2, dtype=int)
 
     matrix_a = dia_matrix(matrix_a)
 
@@ -80,7 +77,7 @@ def conjugate_gradient(matrix_a, vector_b, x0, max_k=10000, eps=1e-10):
             print("One iteration of CG with n = ", n, " needs ", end_cg_it - start_cg_it, " seconds.")
 
         k += 1
-    print("CG done, k=", k)
+    print("CG done, k = ", k)
     return result_x.reshape((k + 1, len(vector_b))), k, e_array, error_bound
 
 
@@ -125,6 +122,7 @@ def conjugate_gradient_np(matrix_a, vector_b, x0, max_k=10000, eps=1e-10):
 
 def draw_plot(max_k=10000, eps=1e-10, dim=10):
 
+    print("\nn = ", dim, " and therefore N = nxn = ", dim*dim)
     a_start = time.time()
     K1d = diags([-1, 2, -1], [-1, 0, 1], shape=(dim, dim)).toarray()
     id_n = identity(dim).toarray()
@@ -139,10 +137,13 @@ def draw_plot(max_k=10000, eps=1e-10, dim=10):
 
     x0 = np.ones(dim ** 2)
 
+    print("\n---Steepest Descent-----------------------------------------")
     start_sd = time.time()
     x_sd, k_sd, e_sd, e_bound_sd = steepest_descent(A, b, x0, max_k=1000, eps=eps)
     end_sd = time.time()
     print("Stochastic descent for n = ", dim, " and therefore N = nxn = ", dim*dim, " needed ", end_sd - start_sd, "seconds.")
+
+    print("\n---Gradient Conjugate---------------------------------------")
     start_cg = time.time()
     x_cg, k_cg, e_cg, e_bound_cg = conjugate_gradient(A, b, x0, max_k=max_k, eps=eps)
     end_cg = time.time()
@@ -174,9 +175,10 @@ def draw_plot(max_k=10000, eps=1e-10, dim=10):
     fig.write_image(str("exercise2-4_charts/relEnergyError_N" + str(dim) + ".png"))
 
 
-for n in [75]:
+for n in [100]:
     draw_plot(dim=n)
 
 
 end_program = time.time()
+print("\n--------------------------------------------------------------")
 print("Whole program needed ", end_program - start_program, "seconds.")
