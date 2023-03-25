@@ -1,17 +1,19 @@
 import numpy as np
-from scipy.sparse import diags, identity, coo_matrix
-import matplotlib.pyplot as plot
-import plotly.express as px
+from scipy.sparse import diags, identity, csr_matrix, dia_matrix
 import plotly.graph_objects as go
-import pandas
+import time
+
+start_program = time.time()
 
 
-def steepest_descent(matrix_a, vector_b, x0, max_k=10000, eps=1e-10):
+def steepest_descent(matrix_a, vector_b, x0, max_k=1000, eps=1e-10):
     cond_number = np.linalg.cond(matrix_a)
     k = 0
     result = np.array([])
     e_array = np.array([])
     error_bound = np.array([])
+
+    matrix_a = dia_matrix(matrix_a)
 
     x = x0
     r = vector_b - matrix_a @ x
@@ -20,6 +22,8 @@ def steepest_descent(matrix_a, vector_b, x0, max_k=10000, eps=1e-10):
     result_x = np.append(result, x, axis=0)
 
     while k < max_k and any(abs(r) > eps):
+        if k == 0:
+            start_sd_it = time.time()
         p = matrix_a @ r
         alpha = (np.transpose(r) @ r) / (np.transpose(r) @ p)
         x = x + alpha * r
@@ -28,8 +32,13 @@ def steepest_descent(matrix_a, vector_b, x0, max_k=10000, eps=1e-10):
         r = r - alpha * p
         result_x = np.append(result_x, x, axis=0)
 
+        if k == 0:
+            end_sd_it = time.time()
+            print("One iteration of SD with n = ", n, " needs ", end_sd_it - start_sd_it, " seconds.")
+
         k += 1
 
+    print("SD done, k=", k)
     return result_x.reshape((k + 1, len(vector_b))), k, e_array, error_bound
 
 
@@ -40,7 +49,57 @@ def conjugate_gradient(matrix_a, vector_b, x0, max_k=10000, eps=1e-10):
     e_array = np.array([])
     error_bound = np.array([])
 
+    row_ind = np.array(range(0, n**2))
+    col_ind = np.zeros(n**2, dtype=int)
+
+    matrix_a = dia_matrix(matrix_a)
+
     x = x0
+    r = vector_b - (matrix_a @ x)
+    p = r
+    e0 = np.linalg.norm(r)
+
+    result_x = np.append(result, x, axis=0)
+
+    while k < max_k and any(abs(r) > eps):
+        if k == 0:
+            start_cg_it = time.time()
+        a_p = (matrix_a @ p)
+        alpha = (r.transpose() @ r) / (p.transpose() @ a_p)
+        x = x + alpha * p
+        e_array = np.append(e_array, [np.linalg.norm(r) / e0], axis=0)
+        error_bound = np.append(error_bound, 2 * ((np.sqrt(cond_number) - 1) / (np.sqrt(cond_number) + 1)) ** k * e0)
+        r_next = r - alpha * a_p
+        beta = (r_next.transpose() @ r_next) / (r.transpose() @ r)
+        r = r_next
+        p = r + beta * p
+        result_x = np.append(result_x, x, axis=0)
+
+        if k == 0:
+            end_cg_it = time.time()
+            print("One iteration of CG with n = ", n, " needs ", end_cg_it - start_cg_it, " seconds.")
+
+        k += 1
+    print("CG done, k=", k)
+    return result_x.reshape((k + 1, len(vector_b))), k, e_array, error_bound
+
+
+def conjugate_gradient_np(matrix_a, vector_b, x0, max_k=10000, eps=1e-10):
+    cond_number = np.linalg.cond(matrix_a)
+    k = 0
+    result = np.array([])
+    e_array = np.array([])
+    error_bound = np.array([])
+
+    row_ind = np.array(range(0, n**2))
+    col_ind = np.zeros(n**2, dtype=int)
+
+    matrix_a = csr_matrix(matrix_a)
+    matrix_b = csr_matrix((vector_b, (row_ind, col_ind)), shape=(n**2, n**2))
+    matrix_b[:, 0].toarray().flatten()
+
+    x = x0
+    matrix_x = csr_matrix((x, (row_ind, col_ind)), shape=(n**2, n**2))
     r = vector_b - matrix_a @ x
     p = r
     e0 = np.linalg.norm(r)
@@ -49,12 +108,12 @@ def conjugate_gradient(matrix_a, vector_b, x0, max_k=10000, eps=1e-10):
 
     while k < max_k and any(abs(r) > eps):
         a_p = matrix_a @ p
-        alpha = (np.transpose(r) @ r) / (np.transpose(p) @ a_p)
+        alpha = (r.transpose() @ r) / (p.transpose() @ a_p)
         x = x + alpha * p
         e_array = np.append(e_array, [np.linalg.norm(r) / e0], axis=0)
         error_bound = np.append(error_bound, 2 * ((np.sqrt(cond_number) - 1) / (np.sqrt(cond_number) + 1)) ** k * e0)
         r_next = r - alpha * a_p
-        beta = (np.transpose(r_next) @ r_next) / (np.transpose(r) @ r)
+        beta = (r_next.transpose() @ r_next) / (r.transpose() @ r)
         r = r_next
         p = r + beta * p
         result_x = np.append(result_x, x, axis=0)
@@ -65,15 +124,29 @@ def conjugate_gradient(matrix_a, vector_b, x0, max_k=10000, eps=1e-10):
 
 
 def draw_plot(max_k=10000, eps=1e-10, dim=10):
+
+    a_start = time.time()
     K1d = diags([-1, 2, -1], [-1, 0, 1], shape=(dim, dim)).toarray()
     id_n = identity(dim).toarray()
     A = np.kron(id_n, K1d) + np.kron(K1d, id_n)
-    print(A)
-    b = np.random.randint(0, 10, dim ** 2)
-    x0 = np.zeros(dim ** 2)
+    a_end = time.time()
+    print("Calculating A needs ", a_end - a_start, " seconds.")
 
-    x_sd, k_sd, e_sd, e_bound_sd = steepest_descent(A, b, x0, max_k=max_k, eps=eps)
+    rand_start = time.time()
+    b = np.random.randint(0, 10, dim ** 2)
+    rand_end = time.time()
+    print("Generating a randomized b needs ", rand_end - rand_start, " seconds.")
+
+    x0 = np.ones(dim ** 2)
+
+    start_sd = time.time()
+    x_sd, k_sd, e_sd, e_bound_sd = steepest_descent(A, b, x0, max_k=1000, eps=eps)
+    end_sd = time.time()
+    print("Stochastic descent for n = ", dim, " and therefore N = nxn = ", dim*dim, " needed ", end_sd - start_sd, "seconds.")
+    start_cg = time.time()
     x_cg, k_cg, e_cg, e_bound_cg = conjugate_gradient(A, b, x0, max_k=max_k, eps=eps)
+    end_cg = time.time()
+    print("Conjugate gradient for n = ", dim, " and therefore N = nxn = ", dim*dim, " needed ", end_cg - start_cg, "seconds.")
 
     eps_array = np.repeat(eps, max(k_sd, k_cg))
 
@@ -98,9 +171,12 @@ def draw_plot(max_k=10000, eps=1e-10, dim=10):
                       showlegend=True
                       )
 
-    fig.write_image(str("relEnergyError_N" + str(dim) + ".png"))
+    fig.write_image(str("exercise2-4_charts/relEnergyError_N" + str(dim) + ".png"))
 
 
-for n in [3]:
+for n in [75]:
     draw_plot(dim=n)
 
+
+end_program = time.time()
+print("Whole program needed ", end_program - start_program, "seconds.")
