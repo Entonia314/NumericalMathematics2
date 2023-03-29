@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.sparse import diags, identity, csr_matrix, dia_matrix
+from scipy.sparse import dia_matrix
 import plotly.graph_objects as go
 import time
 
@@ -13,7 +13,7 @@ def conjugate_gradient(matrix_a, vector_b, x0, max_k=10000, eps=1e-10):
     e_array = np.array([])
     error_bound = np.array([])
 
-    matrix_a = dia_matrix(matrix_a)
+    matrix_a = dia_matrix(matrix_a)     # sparse diagonal matrix
 
     x = x0
     r = vector_b - (matrix_a @ x)
@@ -51,7 +51,7 @@ def draw_plot(max_k=10000, eps=1e-20, dim=10, m=5, eps_eigenvalue=1e-4):
     clustered_eigenvalues = np.random.uniform(1-eps_eigenvalue, 1+eps_eigenvalue, dim-m)
     eigenvalues = np.concatenate((clustered_eigenvalues, large_eigenvalues))
     eigenvalues.sort()
-    #print("Eigenvalues of A: ", eigenvalues)
+    # print("Eigenvalues of A: ", eigenvalues)
     A = np.diag(eigenvalues)
 
     b = np.random.randint(-110, -100, dim)

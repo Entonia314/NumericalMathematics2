@@ -24,7 +24,7 @@ def steepest_descent(matrix_a, vector_b, x0, max_k=1000, eps=1e-10):
     while k < max_k and any(abs(r) > eps):
         if k == 0:
             start_sd_it = time.time()
-        p = matrix_a @ r
+        p = matrix_a @ r    # Matrix multiplication
         alpha = (np.transpose(r) @ r) / (np.transpose(r) @ p)
         x = x + alpha * r
         e_array = np.append(e_array, [np.linalg.norm(r) / e0], axis=0)
@@ -61,7 +61,7 @@ def conjugate_gradient(matrix_a, vector_b, x0, max_k=10000, eps=1e-10):
     while k < max_k and any(abs(r) > eps):
         if k == 0:
             start_cg_it = time.time()
-        a_p = (matrix_a @ p)
+        a_p = (matrix_a @ p)    # only matrix multiplication
         alpha = (r.transpose() @ r) / (p.transpose() @ a_p)
         x = x + alpha * p
         e_array = np.append(e_array, [np.linalg.norm(r) / e0], axis=0)
@@ -104,6 +104,8 @@ def conjugate_gradient_np(matrix_a, vector_b, x0, max_k=10000, eps=1e-10):
     result_x = np.append(result, x, axis=0)
 
     while k < max_k and any(abs(r) > eps):
+        if k == 0:
+            start_cg_it = time.time()
         a_p = matrix_a @ p
         alpha = (r.transpose() @ r) / (p.transpose() @ a_p)
         x = x + alpha * p
@@ -114,9 +116,12 @@ def conjugate_gradient_np(matrix_a, vector_b, x0, max_k=10000, eps=1e-10):
         r = r_next
         p = r + beta * p
         result_x = np.append(result_x, x, axis=0)
+        if k == 0:
+            end_cg_it = time.time()
+            print("One iteration of CG without sparse format with n = ", n, " needs ", end_cg_it - start_cg_it, " seconds.")
 
         k += 1
-
+    print("CG done, k = ", k)
     return result_x.reshape((k + 1, len(vector_b))), k, e_array, error_bound
 
 
@@ -149,7 +154,6 @@ def draw_plot(max_k=10000, eps=1e-10, dim=10):
     end_cg = time.time()
     print("Conjugate gradient for n = ", dim, " and therefore N = nxn = ", dim*dim, " needed ", end_cg - start_cg, "seconds.")
 
-    eps_array = np.repeat(eps, max(k_sd, k_cg))
 
     if k_sd > k_cg:
         fill_array = np.zeros(abs(k_sd - k_cg))
@@ -175,7 +179,7 @@ def draw_plot(max_k=10000, eps=1e-10, dim=10):
     fig.write_image(str("exercise2-4_charts/relEnergyError_N" + str(dim) + ".png"))
 
 
-for n in [100]:
+for n in [60]:
     draw_plot(dim=n)
 
 

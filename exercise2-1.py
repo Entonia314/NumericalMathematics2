@@ -12,7 +12,7 @@ def steepest_descent(matrix_a, vector_b, x0, max_k=1000, eps=1e-10):
     e_array = np.array([])
     error_bound = np.array([])
 
-    matrix_a = csr_matrix(matrix_a)
+    matrix_a = csr_matrix(matrix_a)     # Compressed sparse row matrix
 
     x = x0
     r = vector_b - matrix_a @ x
@@ -21,7 +21,7 @@ def steepest_descent(matrix_a, vector_b, x0, max_k=1000, eps=1e-10):
     result_x = np.append(result, x, axis=0)
 
     while k < max_k and any(abs(r) > eps):
-        p = matrix_a @ r
+        p = matrix_a @ r    # only matrix multiplication
         alpha = (np.transpose(r) @ r) / (np.transpose(r) @ p)
         x = x + alpha * r
         e_array = np.append(e_array, [np.linalg.norm(r) / e0], axis=0)
