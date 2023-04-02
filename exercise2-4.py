@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.sparse import diags, identity, csr_matrix, dia_matrix
+from scipy.sparse import diags, identity, csr_matrix, dia_matrix, csr_array
 import plotly.graph_objects as go
 import time
 
@@ -16,6 +16,7 @@ def steepest_descent(matrix_a, vector_b, x0, max_k=1000, eps=1e-10):
     matrix_a = dia_matrix(matrix_a)
 
     x = x0
+    vector_b = vector_b
     r = vector_b - matrix_a @ x
     e0 = np.linalg.norm(r)
 
@@ -154,7 +155,6 @@ def draw_plot(max_k=10000, eps=1e-10, dim=10):
     end_cg = time.time()
     print("Conjugate gradient for n = ", dim, " and therefore N = nxn = ", dim*dim, " needed ", end_cg - start_cg, "seconds.")
 
-
     if k_sd > k_cg:
         fill_array = np.zeros(abs(k_sd - k_cg))
         e_cg = np.append(e_cg, fill_array)
@@ -179,7 +179,7 @@ def draw_plot(max_k=10000, eps=1e-10, dim=10):
     fig.write_image(str("exercise2-4_charts/relEnergyError_N" + str(dim) + ".png"))
 
 
-for n in [60]:
+for n in [20]:
     draw_plot(dim=n)
 
 
