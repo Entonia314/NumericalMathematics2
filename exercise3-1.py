@@ -1,47 +1,128 @@
 from scipy.sparse import csr_matrix
-from scipy.sparse.linalg import gmres
+from scipy.sparse.linalg import gmres, spilu, spsolve, LinearOperator
+from scipy.sparse import csr_matrix, csc_matrix
+from numpy.linalg import cond
+from scipy.io import mmread
+import pyamg
 import numpy as np
 import plotly.graph_objects as go
 import time
 
 
-def draw_plot(max_k=10000, eps=1e-5, dim=10, m=5, eps_eigenvalue=1e-4, restart=20):
+def do_gmres(A, b, x0, preconditioning=True, restart=20):
 
-    large_eigenvalues = np.random.uniform(90, 110, m)
-    clustered_eigenvalues = np.random.uniform(1-eps_eigenvalue, 1+eps_eigenvalue, dim-m)
-    eigenvalues = np.concatenate((clustered_eigenvalues, large_eigenvalues))
-    eigenvalues.sort()
-    print("Eigenvalues of A: ", eigenvalues)
-    A = np.diag(eigenvalues)
+    condition_number = cond(A.toarray())
 
-    b = np.random.randint(-110, -100, dim)
-    x0 = np.random.randint(100, 110, dim)
-
-    start_1 = time.time()
-    x1, info1 = gmres(A, b, x0, eps, restart, max_k)
-    end_1 = time.time()
-    print("GMRES for A = \n", A, " without precoinditioning needed ", end_1 - start_1, "seconds.")
-    if info1 == 0:
-        print("Convergence tolerance achieved.")
+    if preconditioning:
+        M2 = spilu(A)
+        M_x = lambda x: M2.solve(x)
+        M = LinearOperator(np.shape(A), M_x)
+        start_1 = time.time()
+        residuals = []
+        result, info1 = pyamg.krylov.gmres(A=A, b=b, x0=x0, M=M, restrt=restart, maxiter=100, tol=0.0001, residuals=residuals)
     else:
-        print("Convergence tolerance not achieved, ended after ", info1, " iterations.")
-    print("Solution x: \n", x1)
+        start_1 = time.time()
+        residuals = []
+        result, info1 = pyamg.krylov.gmres(A=A, b=b, x0=x0, M=None, restrt=restart, maxiter=100, tol=0.0001, residuals=residuals)
 
-    """fig = go.Figure()
-    fig.add_trace(go.Scatter(x=np.array(range(k_cg)), y=e_cg, name='CG real', marker={'color': 'blue'}))
-    fig.add_trace(go.Scatter(x=np.array(range(k_cg)), y=e_bound_cg, name='CG theoretical bound', marker={'color': 'cyan'}))
-    fig.add_vline(x=m)
-    fig.update_yaxes(type="log")
-    fig.update_layout(title={'text': str('Relative Energy Error of Conjugate Gradient, n='+str(dim)+', m='+str(m)),
-                             'font': dict(size=18)},
-                      xaxis_title='Iterations',
-                      yaxis_title='Relative Energy Error',
-                      legend=dict(y=0.5, font_size=16),
-                      showlegend=True
-                      )
+    end_1 = time.time()
 
-    fig.write_image(str("exercise2-5_charts/relEnergyError_n" + str(n) + "_m"+str(m)+".png"))"""
+    if preconditioning:
+        print(f"GMRES for A with dimensions {np.shape(A.toarray())} and condition number {round(condition_number)} with preconditioning and restart parameter m={restart} needed ", round(end_1 - start_1, 2), "seconds.")
+        if info1 == 0:
+            print("Convergence tolerance achieved.\n")
+        else:
+            print("Convergence tolerance not achieved, ended after ", info1, " iterations.\n")
+        # print("Solution x: \n", result)
+    else:
+        print(f"GMRES for A with dimensions {np.shape(A.toarray())} and condition number {round(condition_number)} without preconditioning and restart parameter m={restart} needed ", round(end_1 - start_1, 2), "seconds.")
+        if info1 == 0:
+            print("Convergence tolerance achieved.\n")
+        else:
+            print("Convergence tolerance not achieved, ended after ", info1, " iterations.\n")
+        # print("Solution x: \n", result)
+    return residuals
 
 
-for n in [10]:
-    draw_plot(dim=n, m=10)
+# First Matrix
+
+print("------Matrix #1: BP 200: Original Harwell sparse matrix test collection Simplex method basis matrix----------\n")
+print("------without preconditioning----------\n")
+
+A1 = mmread("matrices/bp___200.mtx.gz")
+A1 = csc_matrix(A1)
+b1 = np.ones((np.shape(A1)[0], 1))
+x1 = np.zeros((np.shape(A1)[0], 1))
+
+fig = go.Figure()
+figp = go.Figure()
+
+for m in [10, 20, 50, 100]:
+    res1 = do_gmres(A1, b1, x1, preconditioning=False, restart=m)
+    fig.add_trace(
+        go.Scatter(x=np.array(range(len(res1))), y=res1, name=f"gmres m={m}"))
+
+print("------with preconditioning----------\n")
+
+for m in [10, 20, 50, 100]:
+    res1p = do_gmres(A1, b1, x1, preconditioning=True, restart=m)
+    fig.add_trace(
+        go.Scatter(x=np.array(range(len(res1p))), y=res1p, name=f"pgmres m={m}"))
+    figp.add_trace(
+        go.Scatter(x=np.array(range(len(res1p))), y=res1p, name=f"pgmres m={m}"))
+
+
+fig.update_yaxes(type="log")
+fig.update_layout(title={'text': f"Residuals of GMRES: Matrix 1",
+                         'font': dict(size=18)},
+                  xaxis_title='Iterations',
+                  yaxis_title='Residuals',
+                  legend=dict(y=0.5, font_size=16),
+                  showlegend=True
+                  )
+fig.write_image(f"exercise3-1_charts/matrix1.png")
+
+figp.update_yaxes(type="log")
+figp.update_layout(title={'text': f"Residuals of GMRES: Matrix 1",
+                          'font': dict(size=18)},
+                   xaxis_title='Iterations',
+                   yaxis_title='Residuals',
+                   legend=dict(y=0.5, font_size=16),
+                   showlegend=True
+                   )
+figp.write_image(f"exercise3-1_charts/matrix1_p.png")
+
+# Second Matrix
+
+print("------Matrix #2: FS 183 1: Chemical kinetics problems - PSMOG atmospheric polution study -- 1st output time step----------\n")
+A2 = mmread("matrices/fs_183_1.mtx.gz")
+A2 = csc_matrix(A2)
+b2 = np.ones((np.shape(A2)[0], 1))
+x2 = np.zeros((np.shape(A2)[0], 1))
+
+fig = go.Figure()
+
+print("------without preconditioning----------\n")
+
+for m in [10, 50, 100]:
+    res2 = do_gmres(A2, b2, x2, preconditioning=False, restart=m)
+    fig.add_trace(
+        go.Scatter(x=np.array(range(len(res2))), y=res2, name=f"gmres m={m}"))
+
+print("------with preconditioning----------\n")
+
+for m in [10, 50, 100]:
+    res2p = do_gmres(A2, b2, x2, preconditioning=True, restart=m)
+    fig.add_trace(
+        go.Scatter(x=np.array(range(len(res2p))), y=res2p, name=f"pgmres m={m}"))
+
+fig.update_yaxes(type="log")
+fig.update_layout(title={'text': f"Residuals of GMRES: Matrix 2",
+                         'font': dict(size=18)},
+                  xaxis_title='Iterations',
+                  yaxis_title='Residuals',
+                  legend=dict(y=0.5, font_size=16),
+                  showlegend=True
+                  )
+
+fig.write_image(f"exercise3-1_charts/matrix2.png")
