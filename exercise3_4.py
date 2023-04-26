@@ -21,22 +21,24 @@ def euler_system(f, y0, t0, t1, h=0.01):
     t = t0
     t_list = [0] * (N + 1)
     t_list[0] = t0
-    y = np.zeros((len(f), N + 1))
-    y[:, 0] = y0
+    x = np.zeros(N + 1)
+    v = np.zeros(N + 1)
+    x[0] = y0[0]
+    v[0] = y0[1]
     for k in range(N):
-        for i in range(len(f)):
-            y[i, k + 1] = y[i, k] + h * f[i](t, y[:, k])
-            t = t + h
-            t_list[k + 1] = t
-    return y, t_list
+        x[k + 1] = x[k] + h * f[0](t, v[k])
+        v[k + 1] = v[k] + h * f[1](t, x[k + 1])
+        t = t + h
+        t_list[k + 1] = t
+    return [x, v], t_list
 
 
-def x_dash(t, x):
-    return x[1]
+def x_dash(t, v):
+    return v
 
 
 def v_dash(t, x):
-    return np.sin(t) - x[0]
+    return np.sin(t) - x
 
 
 y, t = euler_system([x_dash, v_dash], [0, 1], t0, t1, h)

@@ -109,6 +109,7 @@ def draw_plot(max_k=10000, eps=1e-10, dim=10):
     A = np.kron(id_n, K1d) + np.kron(K1d, id_n)
     a_end = time.time()
     print("Calculating A needs ", a_end - a_start, " seconds.")
+    print("A: \n", A, '\n')
 
     m_start = time.time()
     M2 = splu(csc_matrix(A))
