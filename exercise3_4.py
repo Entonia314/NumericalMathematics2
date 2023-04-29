@@ -3,7 +3,7 @@ from bokeh.plotting import figure, show
 import plotly.graph_objects as go
 
 t0 = 0
-t1 = 10
+t1 = 40
 h = 0.01
 
 
