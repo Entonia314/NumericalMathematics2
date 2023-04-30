@@ -35,16 +35,20 @@ def y(t):
 
 
 fig = go.Figure()
+p = figure(title="Exercise 4.1: Explicit Euler", x_axis_label='t', y_axis_label='y')
 t = np.linspace(0, 10, 100)
 y_real = y(t)
 fig.add_trace(go.Scatter(x=t, y=y_real, name=f"Analytical y"))
+p.line(t, y_real, line_width=2, line_color="red", legend_label="Analytical y")
 
 for h in [1, 0.5, 0.1, 0.05, 0.01]:
     y_euler, t_list = explicit_euler(y_dash, 1, 0, 10, h)
     fig.add_trace(go.Scatter(x=t_list, y=y_euler, name=f"Explicit Euler with h={h}"))
+    p.line(t_list, y_euler, line_width=2, legend_label=f"Explicit Euler with h={h}")
 
-fig.update_layout(title={'text': f"Exercise 4.1"},
+fig.update_layout(title={'text': f"Exercise 4.1: Explicit Euler Method"},
                   xaxis_title='t',
                   yaxis_title='y',
                   )
-fig.show()
+#fig.show()
+show(p)
