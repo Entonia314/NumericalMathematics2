@@ -3,13 +3,6 @@ from bokeh.plotting import figure, show
 import plotly.graph_objects as go
 
 
-def add(vector, scalar):
-    newvector = [0] * len(vector)
-    for i in range(len(vector)):
-        newvector[i] = vector[i] + scalar
-    return newvector
-
-
 def runge_kutta_4(f, y0, t0, t1, h):
     n_ode = len(y0)
     nh = int((t1 - t0) / h)

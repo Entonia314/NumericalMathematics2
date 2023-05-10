@@ -1,6 +1,7 @@
 import numpy as np
 from bokeh.plotting import figure, show
 import plotly.graph_objects as go
+from exercise4_4 import implicit_midpoint, midpoint_residual
 
 
 def explicit_euler(f, y0, t0, t1, h):
@@ -35,20 +36,21 @@ def y(t):
 
 
 fig = go.Figure()
-p = figure(title="Exercise 4.1: Explicit Euler", x_axis_label='t', y_axis_label='y')
+p = figure(title="Exercise 4.1: Implicit Midpoint", x_axis_label='t', y_axis_label='y')
 t = np.linspace(0, 10, 100)
 y_real = y(t)
-fig.add_trace(go.Scatter(x=t, y=y_real, name=f"Analytical y"))
 p.line(t, y_real, line_width=2, line_color="red", legend_label="Analytical y")
 
-for h in [1, 0.5, 0.1, 0.05, 0.01]:
+for h in [1, 0.5, 0.1, 0.01]:
     y_euler, t_list = explicit_euler(y_dash, 1, 0, 10, h)
-    fig.add_trace(go.Scatter(x=t_list, y=y_euler, name=f"Explicit Euler with h={h}"))
-    p.line(t_list, y_euler, line_width=2, legend_label=f"Explicit Euler with h={h}")
+    fig.add_trace(go.Scatter(x=t_list, y=y_euler, name=f"h={h}"))
+    p.line(t_list, y_euler, line_width=2, legend_label=f"h={h}")
+fig.add_trace(go.Scatter(x=t, y=y_real, name=f"Analytical y"))
 
 fig.update_layout(title={'text': f"Exercise 4.1: Explicit Euler Method"},
                   xaxis_title='t',
                   yaxis_title='y',
+                  template="simple_white"
                   )
-#fig.show()
-show(p)
+fig.write_image("exercise4-1_charts/exercise4-1.png")
+#show(p)
