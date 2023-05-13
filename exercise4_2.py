@@ -34,8 +34,7 @@ def f(t, y):
 
 
 y, t = runge_kutta_4(f, [2.5 * np.sin(2.5), -2.5 * np.cos(2.5)], -2.5, 10, 1/30)
-print(y)
 
 p = figure(title="Exercise 4.2: Runge Kutta of Order 4", x_axis_label='y1', y_axis_label='y2')
 p.line(y[0, :], y[1, :], line_width=2, line_color="purple")
-show(p)
+#show(p)
