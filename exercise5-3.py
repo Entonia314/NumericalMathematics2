@@ -28,12 +28,12 @@ def explicit_euler_step_size_control(f, y0, t0, t1, h):
 
         if error < eps_min and h < h_max and loop_control_count < max_loops:
             h *= f_max
-            print(f"h={h}, error={error}, t={t}: h will be doubled")
+            print(f"h={h}, error={error}, t={round(t, 2)}: h will be doubled")
             loop_control_count += 1
 
         elif error > eps_max and h > h_min and loop_control_count < max_loops:
             h *= f_min
-            print(f"h={h}, error={error}, t={t}: will be halved")
+            print(f"h={h}, error={error}, t={round(t, 2)}: will be halved")
             loop_control_count += 1
 
         else:
